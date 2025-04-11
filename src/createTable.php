@@ -1,1 +1,0 @@
-yiic migrate create create_names_table

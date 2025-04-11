@@ -4,8 +4,8 @@ import javax.servlet.http.*;
 import java.io.IOException;
 import java.sql.*;
 
-@WebServlet("/login")
-public class Login extends HttpServlet {
+@WebServlet("/register")
+public class Register extends HttpServlet {
     private static final String JDBC_URL = "jdbc:mysql://localhost:3306/users";
     private static final String DB_USER = "root";
     private static final String DB_PASS = "admin";
@@ -19,27 +19,27 @@ public class Login extends HttpServlet {
             throw new ServletException("MySQL JDBC Driver not found.", e);
         }
     }
+
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String username = request.getParameter("name"); // Важно: соответствует <input name="name">
-        String password = request.getParameter("pass");
+        String username = request.getParameter("username");
+        String password = request.getParameter("password");
+        String email = request.getParameter("mail");
 
         try (Connection conn = DriverManager.getConnection(JDBC_URL, DB_USER, DB_PASS)) {
-            String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
+            String sql = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, username);
             stmt.setString(2, password);
-            ResultSet rs = stmt.executeQuery();
+            stmt.setString(3, email);
 
-            if (rs.next()) {
-                HttpSession session = request.getSession();
-                session.setAttribute("username", username);
-                response.sendRedirect("welcome.jsp");
-            } else {
-                request.setAttribute("error", "Неверные имя пользователя или пароль.");
-                request.getRequestDispatcher("login.jsp").forward(request, response);
-            }
+            int rowsAffected = stmt.executeUpdate();
+            System.out.println("Rows affected: " + rowsAffected);  // Выводим количество затронутых строк
+
+            response.sendRedirect("index.jsp");
         } catch (SQLException e) {
-            throw new ServletException("Ошибка подключения к БД", e);
+            e.printStackTrace();  // Выводим полный стек ошибки
+            request.setAttribute("error", "Ошибка регистрации пользователя: " + e.getMessage());
+            request.getRequestDispatcher("register.jsp").forward(request, response);
         }
     }
 }
